@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bolsa Matemática - Análise Gráfica</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --light: #ecf0f1;
+            --dark: #34495e;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--dark));
+            color: white;
+            padding: 1rem 0;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        .lives {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            display: flex;
+            gap: 5px;
+        }
+        
+        .life {
+            width: 20px;
+            height: 20px;
+            background-color: var(--danger);
+            border-radius: 50%;
+        }
+        
+        .life.active {
+            background-color: var(--success);
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            border-bottom: 2px solid var(--light);
+            padding-bottom: 0.5rem;
+        }
+        
+        .stock {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.8rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stock:hover {
+            background-color: var(--light);
+        }
+        
+        .stock-name {
+            font-weight: bold;
+        }
+        
+        .stock-price {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        
+        .up {
+            color: var(--success);
+        }
+        
+        .down {
+            color: var(--danger);
+        }
+        
+        .chart-container {
+            height: 250px;
+            margin: 1rem 0;
+            position: relative;
+        }
+        
+        .chart-tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            display: none;
+            z-index: 10;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        button {
+            border: none;
+            padding: 0.8rem;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-buy {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .btn-sell {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .btn-hold {
+            background-color: var(--secondary);
+            color: white;
+        }
+        
+        .pa-challenge {
+            background-color: var(--warning);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: none;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .portfolio-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .badge-success {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .badge-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            color: white;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .game-over-content {
+            background-color: var(--danger);
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            color: #333;
+        }
+        
+        .analysis-tools {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .analysis-btn {
+            padding: 8px 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Bolsa Matemática - Análise Gráfica</h1>
+            <p>Determine a razão da PA observando o gráfico</p>
+            <div class="lives" id="livesContainer">
+                <div class="life active"></div>
+                <div class="life active"></div>
+                <div class="life active"></div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="dashboard">
+            <div class="card">
+                <h2>Carteira de Ações</h2>
+                <div id="stockList">
+                    <!-- Ações serão geradas por JavaScript -->
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Gráfico do Ativo <span id="currentStockSymbol"></span></h2>
+                <div class="chart-container">
+                    <canvas id="stockChart"></canvas>
+                    <div class="chart-tooltip" id="chartTooltip"></div>
+                </div>
+                <div class="analysis-tools">
+                    <button class="analysis-btn" id="showPATrend">Mostrar Tendência PA</button>
+                    <button class="analysis-btn" id="hidePATrend">Ocultar Tendência</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Operações</h2>
+            <div class="controls">
+                <button id="buyBtn" class="btn-buy">Comprar (10)</button>
+                <button id="sellBtn" class="btn-sell">Vender Tudo</button>
+                <button id="holdBtn" class="btn-hold">Próximo Dia</button>
+            </div>
+            
+            <div id="paChallenge" class="pa-challenge">
+                <h3>Desafio de PA</h3>
+                <p id="challengeQuestion"></p>
+                <div class="form-group">
+                    <input type="number" id="challengeAnswer" placeholder="Sua resposta (razão r)">
+                    <small>Analise o gráfico para determinar a razão da PA</small>
+                </div>
+                <button id="submitChallenge" class="btn-buy">Confirmar</button>
+                <p id="challengeFeedback"></p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Seu Portfólio</h2>
+            <div class="portfolio-item">
+                <span>Saldo Disponível:</span>
+                <span id="availableBalance">R$ 10.000,00</span>
+            </div>
+            <div class="portfolio-item">
+                <span>Valor Investido:</span>
+                <span id="investedValue">R$ 0,00</span>
+            </div>
+            <div class="portfolio-item">
+                <span>Lucro/Prejuízo:</span>
+                <span id="profitValue">R$ 0,00</span>
+            </div>
+            <div class="portfolio-item">
+                <span>Patrimônio Total:</span>
+                <span id="netWorth">R$ 10.000,00</span>
+            </div>
+            
+            <h3 style="margin-top: 1rem;">Seus Ativos</h3>
+            <div id="portfolioAssets">
+                <p>Nenhum ativo adquirido</p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="tutorialModal" class="modal">
+        <div class="modal-content">
+            <h2>Bem-vindo à Bolsa Matemática - Análise Gráfica!</h2>
+            <p>Nesta versão, você deve analisar o gráfico para determinar a razão da Progressão Aritmética.</p>
+            
+            <h3 style="margin: 1rem 0 0.5rem;">Como jogar:</h3>
+            <ol style="margin-left: 1.5rem; margin-bottom: 1rem;">
+                <li>Clique em uma ação para ver seu gráfico</li>
+                <li>Use o botão "Mostrar Tendência PA" para ver a linha teórica</li>
+                <li>Analise a diferença entre os pontos para encontrar a razão (r)</li>
+                <li>Responda o valor da razão quando solicitado</li>
+                <li>Você tem 3 vidas - cada erro custa uma vida!</li>
+            </ol>
+            
+            <button id="closeTutorial" class="btn-buy">Começar!</button>
+        </div>
+    </div>
+    
+    <div id="gameOver" class="game-over">
+        <div class="game-over-content">
+            <h2>Game Over!</h2>
+            <p>Você errou muitas questões e foi eliminado do mercado.</p>
+            <p>Seu patrimônio final: <span id="finalBalance">R$ 0,00</span></p>
+            <button id="restartGame" class="btn-buy" style="margin-top: 20px;">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Dados do jogo
+        const gameState = {
+            balance: 10000,
+            portfolio: {},
+            currentStock: null,
+            stockData: {},
+            gameTime: 0,
+            paChallengeActive: false,
+            lives: 3,
+            maxLives: 3,
+            paTrendVisible: false
+        };
+        
+        // Configurações das ações
+        const stocks = [
+            { symbol: "MATH3", name: "Matemática SA", a1: 50, r: 1.5, volatility: 15 },
+            { symbol: "PAFG4", name: "PA Finance Group", a1: 120, r: -0.8, volatility: 20 },
+            { symbol: "ALGR5", name: "Algoritmos Ltda", a1: 80, r: 2.2, volatility: 25 },
+            { symbol: "SEQU6", name: "Sequencial Inc", a1: 150, r: 0.5, volatility: 10 }
+        ];
+        
+        // Elementos DOM
+        const DOM = {
+            stockList: document.getElementById('stockList'),
+            stockChart: document.getElementById('stockChart').getContext('2d'),
+            currentStockSymbol: document.getElementById('currentStockSymbol'),
+            buyBtn: document.getElementById('buyBtn'),
+            sellBtn: document.getElementById('sellBtn'),
+            holdBtn: document.getElementById('holdBtn'),
+            paChallenge: document.getElementById('paChallenge'),
+            challengeQuestion: document.getElementById('challengeQuestion'),
+            challengeAnswer: document.getElementById('challengeAnswer'),
+            challengeFeedback: document.getElementById('challengeFeedback'),
+            submitChallenge: document.getElementById('submitChallenge'),
+            availableBalance: document.getElementById('availableBalance'),
+            investedValue: document.getElementById('investedValue'),
+            profitValue: document.getElementById('profitValue'),
+            netWorth: document.getElementById('netWorth'),
+            portfolioAssets: document.getElementById('portfolioAssets'),
+            livesContainer: document.getElementById('livesContainer'),
+            tutorialModal: document.getElementById('tutorialModal'),
+            closeTutorial: document.getElementById('closeTutorial'),
+            gameOver: document.getElementById('gameOver'),
+            finalBalance: document.getElementById('finalBalance'),
+            restartGame: document.getElementById('restartGame'),
+            chartTooltip: document.getElementById('chartTooltip'),
+            showPATrend: document.getElementById('showPATrend'),
+            hidePATrend: document.getElementById('hidePATrend')
+        };
+        
+        // Gráfico
+        let stockChart = new Chart(DOM.stockChart, {
+            type: 'line',
+            data: { 
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Preço Real',
+                        data: [],
+                        borderColor: '#3498db',
+                        borderWidth: 2,
+                        fill: false,
+                        pointBackgroundColor: '#3498db',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Tendência PA',
+                        data: [],
+                        borderColor: '#e74c3c',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        fill: false,
+                        pointRadius: 0,
+                        hidden: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: false }
+                },
+                plugins: {
+                    legend: { display: true },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                }
+            }
+        });
+        
+        // Inicialização do jogo
+        function initGame() {
+            // Resetar estado do jogo
+            gameState.balance = 10000;
+            gameState.portfolio = {};
+            gameState.gameTime = 0;
+            gameState.lives = 3;
+            gameState.paTrendVisible = false;
+            
+            // Gerar dados iniciais para cada ação
+            stocks.forEach(stock => {
+                gameState.stockData[stock.symbol] = {
+                    history: [],
+                    currentPrice: stock.a1,
+                    paValues: []
+                };
+                generateStockHistory(stock);
+            });
+            
+            // Selecionar primeira ação
+            selectStock(stocks[0]);
+            
+            // Atualizar interface
+            updateStocksList();
+            updatePortfolio();
+            updateLivesDisplay();
+            
+            // Mostrar tutorial na primeira vez
+            if(!localStorage.getItem('tutorialShown')) {
+                DOM.tutorialModal.style.display = 'flex';
+                localStorage.setItem('tutorialShown', 'true');
+            }
+        }
+        
+        // Gerar histórico de preços para uma ação
+        function generateStockHistory(stock) {
+            const history = [];
+            const paValues = [];
+            
+            for(let i = 0; i < 20; i++) {
+                const paValue = stock.a1 + i * stock.r;
+                const volatilityFactor = 1 + (Math.random() * stock.volatility / 100 - stock.volatility / 200);
+                history.push(paValue * volatilityFactor);
+                paValues.push(paValue);
+            }
+            
+            gameState.stockData[stock.symbol].history = history;
+            gameState.stockData[stock.symbol].paValues = paValues;
+            gameState.stockData[stock.symbol].currentPrice = history[history.length - 1];
+        }
+        
+        // Atualizar lista de ações
+        function updateStocksList() {
+            DOM.stockList.innerHTML = '';
+            stocks.forEach(stock => {
+                const stockElement = document.createElement('div');
+                stockElement.className = 'stock';
+                stockElement.innerHTML = `
+                    <div class="stock-name">${stock.symbol} - ${stock.name}</div>
+                    <div class="stock-price ${stock.r >= 0 ? 'up' : 'down'}">
+                        R$ ${gameState.stockData[stock.symbol].currentPrice.toFixed(2)}
+                    </div>
+                `;
+                stockElement.addEventListener('click', () => selectStock(stock));
+                DOM.stockList.appendChild(stockElement);
+            });
+        }
+        
+        // Selecionar ação para visualização
+        function selectStock(stock) {
+            gameState.currentStock = stock;
+            DOM.currentStockSymbol.textContent = stock.symbol;
+            updateStockChart();
+        }
+        
+        // Atualizar gráfico da ação selecionada
+        function updateStockChart() {
+            const history = gameState.stockData[gameState.currentStock.symbol].history;
+            const paValues = gameState.stockData[gameState.currentStock.symbol].paValues;
+            
+            stockChart.data.labels = Array.from({length: history.length}, (_, i) => i + 1);
+            stockChart.data.datasets[0].data = history;
+            stockChart.data.datasets[1].data = paValues;
+            stockChart.update();
+        }
+        
+        // Atualizar exibição do portfólio
+        function updatePortfolio() {
+            DOM.availableBalance.textContent = `R$ ${gameState.balance.toFixed(2)}`;
+            
+            let invested = 0;
+            let profit = 0;
+            
+            // Limpar e recriar lista de ativos
+            DOM.portfolioAssets.innerHTML = '';
+            
+            // Calcular valores do portfólio
+            Object.keys(gameState.portfolio).forEach(symbol => {
+                if (!symbol.includes('_buyPrice')) {
+                    const currentPrice = gameState.stockData[symbol].currentPrice;
+                    const quantity = gameState.portfolio[symbol];
+                    const buyPrice = gameState.portfolio[`${symbol}_buyPrice`];
+                    const value = quantity * currentPrice;
+                    const stockProfit = (currentPrice - buyPrice) * quantity;
+                    
+                    invested += value;
+                    profit += stockProfit;
+                    
+                    // Adicionar ativo ao portfólio
+                    const assetElement = document.createElement('div');
+                    assetElement.className = 'portfolio-item';
+                    assetElement.innerHTML = `
+                        <div>
+                            <strong>${symbol}</strong> - ${quantity} ações
+                            <span class="badge ${stockProfit >= 0 ? 'badge-success' : 'badge-danger'}">
+                                ${stockProfit >= 0 ? '+' : ''}${stockProfit.toFixed(2)}
+                            </span>
+                        </div>
+                        <div>R$ ${value.toFixed(2)}</div>
+                    `;
+                    DOM.portfolioAssets.appendChild(assetElement);
+                }
+            });
+            
+            // Atualizar valores totais
+            DOM.investedValue.textContent = `R$ ${invested.toFixed(2)}`;
+            DOM.profitValue.textContent = `R$ ${profit >= 0 ? '+' : ''}${profit.toFixed(2)}`;
+            DOM.profitValue.style.color = profit >= 0 ? '#27ae60' : '#e74c3c';
+            DOM.netWorth.textContent = `R$ ${(gameState.balance + invested).toFixed(2)}`;
+            
+            // Mostrar mensagem se não houver ativos
+            if(DOM.portfolioAssets.children.length === 0) {
+                DOM.portfolioAssets.innerHTML = '<p>Nenhum ativo adquirido</p>';
+            }
+        }
+        
+        // Atualizar exibição de vidas
+        function updateLivesDisplay() {
+            DOM.livesContainer.innerHTML = '';
+            for(let i = 0; i < gameState.maxLives; i++) {
+                const life = document.createElement('div');
+                life.className = `life ${i < gameState.lives ? 'active' : ''}`;
+                DOM.livesContainer.appendChild(life);
+            }
+        }
+        
+        // Avançar para o próximo dia
+        function nextDay() {
+            gameState.gameTime++;
+            
+            // Atualizar preços de todas as ações
+            stocks.forEach(stock => {
+                const paValue = stock.a1 + gameState.gameTime * stock.r;
+                const volatilityFactor = 1 + (Math.random() * stock.volatility / 100 - stock.volatility / 200);
+                const newPrice = paValue * volatilityFactor;
+                
+                // Atualizar histórico
+                gameState.stockData[stock.symbol].history.push(newPrice);
+                gameState.stockData[stock.symbol].history.shift();
+                gameState.stockData[stock.symbol].paValues.push(paValue);
+                gameState.stockData[stock.symbol].paValues.shift();
+                gameState.stockData[stock.symbol].currentPrice = newPrice;
+            });
+            
+            // Atualizar interface
+            updateStocksList();
+            updateStockChart();
+            
+            alert("Mercado avançou para o próximo dia!");
+        }
+        
+        // Mostrar/ocultar tendência PA no gráfico
+        function togglePATrend(visible) {
+            gameState.paTrendVisible = visible;
+            stockChart.data.datasets[1].hidden = !visible;
+            stockChart.update();
+        }
+        
+        // Mostrar desafio de PA
+        function showPAChallenge(action) {
+            gameState.paChallengeActive = true;
+            DOM.paChallenge.style.display = 'block';
+            
+            // Mostrar a tendência PA para análise
+            togglePATrend(true);
+            
+            // Gerar questão sobre a razão
+            DOM.challengeQuestion.textContent = `Qual é a razão (r) da Progressão Aritmética da ação ${gameState.currentStock.symbol}? 
+            Analise o gráfico para determinar o valor.`;
+            
+            DOM.challengeAnswer.value = '';
+            DOM.challengeFeedback.textContent = '';
+            
+            // Desativar botões durante o desafio
+            DOM.buyBtn.disabled = true;
+            DOM.sellBtn.disabled = true;
+            DOM.holdBtn.disabled = true;
+            
+            // Configurar ação do botão de submit
+            DOM.submitChallenge.onclick = function() {
+                checkPAChallenge(action);
+            };
+        }
+        
+        // Verificar resposta do desafio
+        function checkPAChallenge(action) {
+            const userAnswer = parseFloat(DOM.challengeAnswer.value);
+            const correctAnswer = gameState.currentStock.r;
+            
+            // Margem de erro aceitável (10% da razão)
+            const margin = Math.abs(correctAnswer * 0.1);
+            const correct = Math.abs(userAnswer - correctAnswer) <= margin;
+            
+            if(correct) {
+                DOM.challengeFeedback.textContent = `Correto! A razão é ${correctAnswer.toFixed(2)}`;
+                DOM.challengeFeedback.style.color = '#27ae60';
+                
+                setTimeout(() => {
+                    executeAction(action);
+                    DOM.paChallenge.style.display = 'none';
+                    gameState.paChallengeActive = false;
+                    togglePATrend(false);
+                }, 1500);
+            } else {
+                gameState.lives--;
+                updateLivesDisplay();
+                
+                DOM.challengeFeedback.textContent = `Incorreto! A razão correta é ${correctAnswer.toFixed(2)}. Você perdeu uma vida.`;
+                DOM.challengeFeedback.style.color = '#e74c3c';
+                
+                if(gameState.lives <= 0) {
+                    setTimeout(() => {
+                        endGame();
+                    }, 1500);
+                } else {
+                    // Permitir nova tentativa
+                    DOM.challengeAnswer.value = '';
+                }
+            }
+        }
+        
+        // Executar ação de compra/venda
+        function executeAction(action) {
+            const stock = gameState.currentStock;
+            const symbol = stock.symbol;
+            const price = gameState.stockData[symbol].currentPrice;
+            
+            if(action === 'buy') {
+                const cost = 10 * price; // Comprar 10 ações
+                if(gameState.balance >= cost) {
+                    gameState.portfolio[symbol] = (gameState.portfolio[symbol] || 0) + 10;
+                    gameState.portfolio[`${symbol}_buyPrice`] = price;
+                    gameState.balance -= cost;
+                    
+                    alert(`Compra realizada: 10 ações de ${symbol} a R$ ${price.toFixed(2)} cada (Total: R$ ${cost.toFixed(2)})`);
+                } else {
+                    alert("Saldo insuficiente para esta operação!");
+                }
+            }
+            else if(action === 'sell') {
+                const owned = gameState.portfolio[symbol] || 0;
+                if(owned > 0) {
+                    const total = owned * price;
+                    gameState.balance += total;
+                    delete gameState.portfolio[symbol];
+                    delete gameState.portfolio[`${symbol}_buyPrice`];
+                    
+                    alert(`Venda realizada: ${owned} ações de ${symbol} a R$ ${price.toFixed(2)} cada (Total: R$ ${total.toFixed(2)})`);
+                } else {
+                    alert("Você não possui esta ação para vender!");
+                }
+            }
+            
+            updatePortfolio();
+            DOM.buyBtn.disabled = false;
+            DOM.sellBtn.disabled = false;
+            DOM.holdBtn.disabled = false;
+        }
+        
+        // Finalizar o jogo
+        function endGame() {
+            // Calcular patrimônio final
+            let totalValue = gameState.balance;
+            Object.keys(gameState.portfolio).forEach(symbol => {
+                if (!symbol.includes('_buyPrice')) {
+                    totalValue += gameState.portfolio[symbol] * gameState.stockData[symbol].currentPrice;
+                }
+            });
+            
+            DOM.finalBalance.textContent = `R$ ${totalValue.toFixed(2)}`;
+            DOM.gameOver.style.display = 'flex';
+            
+            // Desativar todos os botões
+            DOM.buyBtn.disabled = true;
+            DOM.sellBtn.disabled = true;
+            DOM.holdBtn.disabled = true;
+            togglePATrend(false);
+        }
+        
+        // Event Listeners
+        DOM.buyBtn.addEventListener('click', () => {
+            if(Math.random() > 0.3) { // 70% de chance de desafio
+                showPAChallenge('buy');
+            } else {
+                executeAction('buy');
+            }
+        });
+        
+        DOM.sellBtn.addEventListener('click', () => {
+            if(Math.random() > 0.3) { // 70% de chance de desafio
+                showPAChallenge('sell');
+            } else {
+                executeAction('sell');
+            }
+        });
+        
+        DOM.holdBtn.addEventListener('click', () => {
+            nextDay();
+        });
+        
+        DOM.closeTutorial.addEventListener('click', () => {
+            DOM.tutorialModal.style.display = 'none';
+        });
+        
+        DOM.restartGame.addEventListener('click', () => {
+            initGame();
+            DOM.gameOver.style.display = 'none';
+        });
+        
+        DOM.showPATrend.addEventListener('click', () => {
+            togglePATrend(true);
+        });
+        
+        DOM.hidePATrend.addEventListener('click', () => {
+            togglePATrend(false);
+        });
+        
+        // Permitir enviar resposta com Enter
+        DOM.challengeAnswer.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') {
+                DOM.submitChallenge.click();
+            }
+        });
+        
+        // Tooltip personalizado para o gráfico
+        document.getElementById('stockChart').addEventListener('mousemove', (e) => {
+            const canvas = document.getElementById('stockChart');
+            const tooltip = DOM.chartTooltip;
+            
+            if (!gameState.currentStock || !gameState.paTrendVisible) {
+                tooltip.style.display = 'none';
+                return;
+            }
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const points = stockChart.data.datasets[1].data;
+            const index = Math.round((x / rect.width) * (points.length - 1));
+            
+            if (index >= 0 && index < points.length) {
+                const value = points[index];
+                const day = index + 1;
+                
+                tooltip.innerHTML = `Dia ${day}<br>PA: R$ ${value.toFixed(2)}`;
+                tooltip.style.display = 'block';
+                tooltip.style.left = `${x + 10}px`;
+                tooltip.style.top = `${y + 10}px`;
+            } else {
+                tooltip.style.display = 'none';
+            }
+        });
+        
+        document.getElementById('stockChart').addEventListener('mouseout', () => {
+            DOM.chartTooltip.style.display = 'none';
+        });
+        
+        // Iniciar o jogo
+        initGame();
+    </script>
+</body>
+</html>
